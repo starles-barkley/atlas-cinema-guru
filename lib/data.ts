@@ -14,7 +14,7 @@ export async function fetchTitles(
   userEmail: string
 ) {
   try {
-    // Get favorites title ids
+    // 1. Fetch user favorites
     const favorites = (
       await db
         .selectFrom("favorites")
@@ -23,7 +23,7 @@ export async function fetchTitles(
         .execute()
     ).map((row) => row.title_id);
 
-    // Get watch later title ids
+    // 2. Fetch user watch later
     const watchLater = (
       await db
         .selectFrom("watchlater")
@@ -32,19 +32,27 @@ export async function fetchTitles(
         .execute()
     ).map((row) => row.title_id);
 
-    //Fetch titles
-    const titles = await db
+    // 3. Build the base query
+    let titlesQuery = db
       .selectFrom("titles")
       .selectAll("titles")
       .where("titles.released", ">=", minYear)
       .where("titles.released", "<=", maxYear)
-      .where("titles.title", "ilike", `%${query}%`)
-      .where("titles.genre", "in", genres)
+      .where("titles.title", "ilike", `%${query}%`);
+
+    // 4. Conditionally filter genres if genres array is not empty
+    if (genres.length > 0) {
+      titlesQuery = titlesQuery.where("titles.genre", "in", genres);
+    }
+
+    // 5. Finalize the query (limit, offset, ordering)
+    const titles = await titlesQuery
       .orderBy("titles.title", "asc")
       .limit(6)
       .offset((page - 1) * 6)
       .execute();
 
+    // 6. Map results with favorited/watchLater info
     return titles.map((row) => ({
       ...row,
       favorited: favorites.includes(row.id),
@@ -52,8 +60,10 @@ export async function fetchTitles(
       image: `/images/${row.id}.webp`,
     }));
   } catch (error) {
-    console.error("Database Error:", error);
-    throw new Error("Failed to fetch topics.");
+    console.error("Database Error in fetchTitles:", error);
+    // The original message was "Failed to fetch topics."
+    // Let's make it more descriptive:
+    throw new Error("Failed to fetch titles from database.");
   }
 }
 
