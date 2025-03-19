@@ -1,6 +1,6 @@
 import { fetchFavorites } from "@/lib/data";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@/app/auth";
 
 /**
  * GET /api/favorites

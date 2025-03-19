@@ -1,4 +1,3 @@
-// components/MovieCard.tsx
 "use client";
 import React, { useState } from "react";
 import { useSession } from "next-auth/react";
@@ -7,11 +6,11 @@ interface Movie {
   id: string;
   title: string;
   description: string;
-  releaseYear: number;
-  genres: string[];
-  imageUrl: string;
-  isFavorited: boolean;
-  isWatchLater: boolean;
+  released: number;
+  genre: string;
+  favorited: boolean;
+  watchLater: boolean;
+  image: string;
 }
 
 interface MovieCardProps {
@@ -20,24 +19,20 @@ interface MovieCardProps {
 
 const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
   const { data: session } = useSession();
-  const [isFavorited, setIsFavorited] = useState(movie.isFavorited);
-  const [isWatchLater, setIsWatchLater] = useState(movie.isWatchLater);
+  const [isFavorited, setIsFavorited] = useState(movie.favorited);
+  const [isWatchLater, setIsWatchLater] = useState(movie.watchLater);
 
   const toggleFavorite = async () => {
     if (isFavorited) {
       const res = await fetch(`/api/favorites/${movie.id}`, {
         method: "DELETE",
       });
-      if (res.ok) {
-        setIsFavorited(false);
-      }
+      if (res.ok) setIsFavorited(false);
     } else {
       const res = await fetch(`/api/favorites/${movie.id}`, {
         method: "POST",
       });
-      if (res.ok) {
-        setIsFavorited(true);
-      }
+      if (res.ok) setIsFavorited(true);
     }
   };
 
@@ -46,35 +41,33 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie }) => {
       const res = await fetch(`/api/watch-later/${movie.id}`, {
         method: "DELETE",
       });
-      if (res.ok) {
-        setIsWatchLater(false);
-      }
+      if (res.ok) setIsWatchLater(false);
     } else {
       const res = await fetch(`/api/watch-later/${movie.id}`, {
         method: "POST",
       });
-      if (res.ok) {
-        setIsWatchLater(true);
-      }
+      if (res.ok) setIsWatchLater(true);
     }
   };
 
   return (
     <div className="relative group border rounded overflow-hidden">
       <img
-        src={movie.imageUrl}
+        src={movie.image}
         alt={movie.title}
         className="w-full h-64 object-cover"
       />
       {/* Overlay on hover */}
-      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-2">
+      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 
+                      group-hover:opacity-100 transition-opacity duration-300 
+                      flex flex-col justify-between p-2"
+      >
         <div>
           <h2 className="text-white font-bold">{movie.title}</h2>
           <p className="text-white text-sm">{movie.description}</p>
-          <p className="text-white text-sm">Year: {movie.releaseYear}</p>
-          <p className="text-white text-sm">
-            Genres: {movie.genres.join(", ")}
-          </p>
+          <p className="text-white text-sm">Year: {movie.released}</p>
+          {/* Display the single genre string */}
+          <p className="text-white text-sm">Genre: {movie.genre}</p>
         </div>
         <div className="flex justify-end space-x-2">
           <button onClick={toggleFavorite}>

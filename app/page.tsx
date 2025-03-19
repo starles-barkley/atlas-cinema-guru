@@ -1,5 +1,5 @@
-// app/page.tsx
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
 import MovieCard from "../components/MovieCard";
@@ -12,6 +12,7 @@ const HomePage = () => {
   const [maxYear, setMaxYear] = useState("");
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  // Since our route doesn't return totalPages, default it to 1.
   const [totalPages, setTotalPages] = useState(1);
 
   // Fetch movies whenever filters or page changes.
@@ -22,14 +23,16 @@ const HomePage = () => {
   }, [searchQuery, minYear, maxYear, selectedGenres, page, status]);
 
   const fetchMovies = async () => {
+    // Change "search" to "query" so the route receives the correct parameter.
     const params = new URLSearchParams({
       page: page.toString(),
-      ...(searchQuery && { search: searchQuery }),
+      ...(searchQuery && { query: searchQuery }),
       ...(minYear && { minYear }),
       ...(maxYear && { maxYear }),
       ...(selectedGenres.length > 0 && { genres: selectedGenres.join(",") }),
     });
 
+    console.log("Fetching:", `/api/titles?${params.toString()}`);
     try {
       const res = await fetch(`/api/titles?${params.toString()}`);
       if (!res.ok) {
@@ -37,9 +40,10 @@ const HomePage = () => {
         return;
       }
       const data = await res.json();
-      // Assuming your API returns an object with { movies: Movie[], totalPages: number }
-      setMovies(data.movies);
-      setTotalPages(data.totalPages);
+      // The API returns { title: title } where title is the array of movies.
+      setMovies(data.title || []);
+      // Since totalPages is not provided by the API, we can default to 1.
+      setTotalPages(1);
     } catch (error) {
       console.error("Error fetching movies:", error);
     }
@@ -62,10 +66,7 @@ const HomePage = () => {
       <div className="flex justify-center items-center h-screen">
         <p>
           Please{" "}
-          <button
-            onClick={() => signIn()}
-            className="underline text-blue-500"
-          >
+          <button onClick={() => signIn()} className="underline text-blue-500">
             sign in
           </button>{" "}
           to access the homepage.
@@ -118,21 +119,19 @@ const HomePage = () => {
 
         {/* Genre Filters */}
         <div className="flex space-x-2">
-          {["Action", "Comedy", "Drama", "Sci-Fi", "Mystery"].map(
-            (genre) => (
-              <button
-                key={genre}
-                onClick={() => handleGenreChange(genre)}
-                className={`border px-2 py-1 ${
-                  selectedGenres.includes(genre)
-                    ? "bg-blue-500 text-white"
-                    : "bg-white text-black"
-                }`}
-              >
-                {genre}
-              </button>
-            )
-          )}
+          {["Action", "Comedy", "Drama", "Sci-Fi", "Mystery"].map((genre) => (
+            <button
+              key={genre}
+              onClick={() => handleGenreChange(genre)}
+              className={`border px-2 py-1 ${
+                selectedGenres.includes(genre)
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-black"
+              }`}
+            >
+              {genre}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -156,7 +155,9 @@ const HomePage = () => {
           Page {page} of {totalPages}
         </p>
         <button
-          onClick={() => setPage((prev) => (prev < totalPages ? prev + 1 : prev))}
+          onClick={() =>
+            setPage((prev) => (prev < totalPages ? prev + 1 : prev))
+          }
           disabled={page === totalPages}
           className="border px-4 py-2 disabled:opacity-50"
         >
