@@ -10,18 +10,20 @@ export default function Sidebar() {
   return (
     <aside
       className={`
-        fixed top-0 left-0 h-full bg-teal-400 transition-all duration-300
+        fixed top-16 left-0 h-[calc(100%-4rem)]
+        bg-teal-400 transition-all duration-300
+        z-40
         ${expanded ? "w-64" : "w-16"}
       `}
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}
     >
       <nav className="flex flex-col h-full">
-        {/* Top Icons / Links */}
+        {/* Icons / Links */}
         <div className="p-4 flex flex-col gap-6">
           <Link href="/" className="flex items-center gap-2">
             <img
-              src="/assets/home.svg" 
+              src="/assets/home.svg"
               alt="Home"
               className="w-6 h-6"
             />
@@ -47,7 +49,7 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* Activity Feed (only visible when expanded) */}
+        {/* Activity feed only when expanded */}
         {expanded && (
           <div className="flex-1 overflow-y-auto p-4 bg-teal-300 text-black">
             <ActivityFeed />

@@ -1,8 +1,7 @@
-// app/layout.tsx
 import "@/app/global.css";
 import { Metadata } from "next";
 import SessionProviderWrapper from "./SessionProviderWrapper";
-import Header from "./Header";
+import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 
 export const metadata: Metadata = {
@@ -14,10 +13,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="antialiased bg-[#00003c] text-white">
         <SessionProviderWrapper>
+          {/* Fixed header at the top */}
           <Header />
-          <div className="flex">
+          {/* Container below the header, with top padding so content is never behind the header */}
+          <div className="pt-16 relative">
+            {/* Collapsible sidebar pinned to the left, top offset to avoid covering header */}
             <Sidebar />
-            <main className="flex-1 p-4">{children}</main>
+            {/* Main content with left margin so it's not behind the sidebar */}
+            <main className="ml-16 p-4">
+              {children}
+            </main>
           </div>
         </SessionProviderWrapper>
       </body>
