@@ -3,46 +3,65 @@
 import { useEffect, useState } from "react";
 
 interface Activity {
-  id: string;
-  date: string;
-  action: string;
-  title: string;
+  id: number;
+  timestamp: string;
+  activity: string; // e.g. "FAVORITED" or "WATCH_LATER"
+  title: string;    // movie title
 }
 
 export default function ActivityFeed() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Simple polling approach: fetch activities every 5 seconds
+  const fetchActivities = async () => {
+    try {
+      const res = await fetch("/api/activities", { credentials: "include" });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch activities");
+      }
+      const data = await res.json();
+      // If your endpoint returns { activities: [...] }
+      setActivities(data.activities || []);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
 
   useEffect(() => {
-    const fetchActivities = async () => {
-      const res = await fetch("/api/activities");
-      if (res.ok) {
-        const data = await res.json();
-        setActivities(data);
-      } else {
-        console.error("Failed to fetch activity");
-      }
-      setLoading(false);
-    };
-
     fetchActivities();
+    const interval = setInterval(() => {
+      fetchActivities();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  if (loading) return <p>Loading activity...</p>;
+  if (error) {
+    return <p className="text-red-600">Error: {error}</p>;
+  }
 
   return (
-    <div className="p-4 bg-gray-800 text-white rounded">
-      <h2 className="text-xl font-bold mb-2">Recent Activity</h2>
+    <div>
+      <h2 className="font-bold mb-2">Latest Activities</h2>
       {activities.length > 0 ? (
-        activities.map((activity) => (
-          <div key={activity.id} className="mb-2 text-sm">
-            <p>
-              <span className="font-bold">{new Date(activity.date).toLocaleString()}</span> – {activity.title} {activity.action}
-            </p>
-          </div>
-        ))
+        <ul className="space-y-2 text-sm">
+          {activities.map((act) => (
+            <li key={act.id}>
+              <p>
+                {new Date(act.timestamp).toLocaleString()}
+              </p>
+              <p>
+                {act.activity === "FAVORITED"
+                  ? "Favorited"
+                  : "Added"}{" "}
+                <strong>{act.title}</strong>
+              </p>
+            </li>
+          ))}
+        </ul>
       ) : (
-        <p>No recent activity.</p>
+        <p className="text-sm">No recent activity.</p>
       )}
     </div>
   );

@@ -1,37 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/auth"; // Make sure auth.ts exports 'authOptions'
+import { authOptions } from "@/auth";
 import { fetchActivities } from "@/lib/data";
 
-/**
- * GET /api/activities
- */
 export async function GET(req: NextRequest) {
-  // Parse the 'page' query parameter
-  const url = new URL(req.url);
-  const pageParam = url.searchParams.get("page");
-  const page = pageParam ? parseInt(pageParam, 10) : 1;
-
-  // Get the session from NextAuth
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json(
-      { error: "Unauthorized - Not logged in" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Use the user's email from the session
+  const url = new URL(req.url);
+  // parse page param if needed, or default to 1
+  const page = parseInt(url.searchParams.get("page") || "1", 10);
+
   const email = session.user?.email;
   if (!email) {
-    return NextResponse.json(
-      { error: "User has no email" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "No email found" }, { status: 400 });
   }
 
-  // Fetch activities using your existing helper
-  const activities = await fetchActivities(page, email);
-
-  return NextResponse.json({ activities });
+  try {
+    // fetchActivities(page, email) from your lib/data
+    const activities = await fetchActivities(page, email);
+    return NextResponse.json({ activities });
+  } catch (error: any) {
+    console.error("Error fetching activities:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch activities" },
+      { status: 500 }
+    );
+  }
 }
