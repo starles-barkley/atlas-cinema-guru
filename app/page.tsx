@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import MovieCard from "@/components/MovieCard";
 
-// Example: if you have an endpoint for fetching all possible genres
-// We'll do a separate call to /api/genres. Adjust if your code differs.
 export default function HomePage() {
   const { data: session } = useSession();
   const [movies, setMovies] = useState<any[]>([]);
@@ -17,7 +15,7 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Fetch available genres on mount
+  // (Optional) fetch all genres from /api/genres on mount
   useEffect(() => {
     const fetchGenres = async () => {
       const res = await fetch("/api/genres", { credentials: "include" });
@@ -29,9 +27,9 @@ export default function HomePage() {
     fetchGenres();
   }, []);
 
-  // Fetch movies whenever filters or page changes
+  // Re-fetch movies whenever filters or page changes
   useEffect(() => {
-    if (!session) return; // rely on middleware to ensure login, but let's be safe
+    if (!session) return;
 
     const fetchMovies = async () => {
       setLoading(true);
@@ -61,7 +59,7 @@ export default function HomePage() {
     fetchMovies();
   }, [session, page, search, minYear, maxYear, selectedGenres]);
 
-  // Reset to page 1 whenever a filter changes
+  // Helper: reset to page=1 whenever a filter changes
   const handleFilterChange = (setter: Function, value: string) => {
     setter(value);
     setPage(1);
@@ -84,7 +82,7 @@ export default function HomePage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-4">
-        {/* Search by Title */}
+        {/* Title Search */}
         <input
           type="text"
           placeholder="Search title..."
@@ -111,7 +109,7 @@ export default function HomePage() {
           className="border p-2 rounded w-24"
         />
 
-        {/* Genre Multi-Select */}
+        {/* Genre Buttons */}
         <div className="flex items-center gap-2">
           <label className="font-semibold">Genres:</label>
           <div className="flex flex-wrap gap-2">
@@ -142,7 +140,7 @@ export default function HomePage() {
         <p>No movies found.</p>
       )}
 
-      {/* Pagination Controls */}
+      {/* Pagination */}
       <div className="flex justify-center gap-4 mt-4">
         <button
           onClick={() => setPage((p) => Math.max(p - 1, 1))}

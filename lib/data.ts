@@ -52,17 +52,19 @@ export async function fetchTitles(
       .offset((page - 1) * 6)
       .execute();
 
-    // 6. Map results with favorited/watchLater info
+    // 6. Map results with favorited/watchLater info + rename columns
     return titles.map((row) => ({
       ...row,
       favorited: favorites.includes(row.id),
       watchLater: watchLater.includes(row.id),
       image: `/images/${row.id}.webp`,
+      // Convert "released" to "year"
+      year: row.released,
+      // Convert "synopsis" to "description"
+      description: row.synopsis,
     }));
   } catch (error) {
     console.error("Database Error in fetchTitles:", error);
-    // The original message was "Failed to fetch topics."
-    // Let's make it more descriptive:
     throw new Error("Failed to fetch titles from database.");
   }
 }
@@ -232,14 +234,14 @@ export async function watchLaterExists(
  */
 export async function fetchGenres(): Promise<string[]> {
   const data = await sql<{ genre: string }>`
-        SELECT DISTINCT titles.genre
-        FROM titles;
-      `;
+    SELECT DISTINCT titles.genre
+    FROM titles;
+  `;
   return data.rows.map((row) => row.genre);
 }
 
 /**
- * Get a users favorites list.
+ * Get a users activities
  */
 export async function fetchActivities(page: number, userEmail: string) {
   try {

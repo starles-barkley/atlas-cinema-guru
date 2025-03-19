@@ -14,8 +14,6 @@ export async function GET(req: NextRequest) {
   const search = url.searchParams.get("search") || "";
   const minYear = parseInt(url.searchParams.get("minYear") || "0", 10);
   const maxYear = parseInt(url.searchParams.get("maxYear") || "9999", 10);
-
-  // Split comma-separated genres
   const genresParam = url.searchParams.get("genres") || "";
   const genres = genresParam
     .split(",")
@@ -25,8 +23,9 @@ export async function GET(req: NextRequest) {
   const email = session.user?.email || "";
 
   try {
+    // fetchTitles signature: (page, minYear, maxYear, query, genres[], userEmail)
     const titles = await fetchTitles(page, minYear, maxYear, search, genres, email);
-    return NextResponse.json(titles); // Or { titles } if you prefer
+    return NextResponse.json(titles); // or { titles }
   } catch (error: any) {
     console.error("Error in GET /api/titles:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

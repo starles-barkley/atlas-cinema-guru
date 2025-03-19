@@ -15,8 +15,8 @@ interface Movie {
 
 interface MovieCardProps {
   movie: Movie;
-  onToggleFavorite?: () => void;     // new optional callback
-  onToggleWatchLater?: () => void;  // new optional callback
+  onToggleFavorite?: () => void;
+  onToggleWatchLater?: () => void;
 }
 
 export default function MovieCard({
@@ -33,7 +33,6 @@ export default function MovieCard({
     const res = await fetch(url, { method, credentials: "include" });
     if (res.ok) {
       setIsFavorite(!isFavorite);
-      // If a parent page wants to refetch after removing favorites
       if (onToggleFavorite) onToggleFavorite();
     } else {
       console.error("Failed to toggle favorite:", await res.text());
@@ -52,56 +51,61 @@ export default function MovieCard({
     }
   };
 
+  // Determine the image source
   const imageSrc = movie.image || `/images/${movie.id}.webp`;
 
   return (
-    <div className="relative group border rounded overflow-hidden">
+    <div className="relative group border-2 border-teal-500 rounded-lg overflow-hidden bg-[#001a4a] text-white">
       {/* Movie Image */}
       <img
         src={imageSrc}
         alt={movie.title}
-        className="w-full h-auto"
+        className="w-full h-auto object-cover"
       />
 
-      {/* Hover Overlay */}
-      <div className="absolute inset-0 bg-black bg-opacity-70 text-white p-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end">
-        <h2 className="text-lg font-bold">{movie.title}</h2>
-        {movie.description && (
-          <p className="text-sm">{movie.description}</p>
-        )}
-        {movie.year !== undefined && movie.genre && (
-          <p className="text-sm">
-            {movie.year} • {movie.genre}
-          </p>
-        )}
+      {/* Top-right icons (no white background) */}
+      <div className="absolute top-2 right-2 flex flex-col items-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={toggleFavorite} title={isFavorite ? "Unfavorite" : "Favorite"}>
+          <img
+            src={
+              isFavorite
+                ? "/assets/star-fill.svg"
+                : "/assets/star-outline.svg"
+            }
+            alt="Favorite"
+            className="w-6 h-6"
+          />
+        </button>
+        <button
+          onClick={toggleWatchLater}
+          title={isWatchLater ? "Remove from Watch Later" : "Add to Watch Later"}
+        >
+          <img
+            src={
+              isWatchLater
+                ? "/assets/clock-fill.svg"
+                : "/assets/clock-outline.svg"
+            }
+            alt="Watch Later"
+            className="w-6 h-6"
+          />
+        </button>
+      </div>
 
-        {/* Buttons Row */}
-        <div className="flex gap-2 mt-3">
-          {/* Favorite Button */}
-          <button onClick={toggleFavorite}>
-            <img
-              src={
-                isFavorite
-                  ? "/assets/star-fill.svg"
-                  : "/assets/star-outline.svg"
-              }
-              alt="Favorite"
-              className="w-6 h-6"
-            />
-          </button>
-          {/* Watch Later Button */}
-          <button onClick={toggleWatchLater}>
-            <img
-              src={
-                isWatchLater
-                  ? "/assets/clock-fill.svg"
-                  : "/assets/clock-outline.svg"
-              }
-              alt="Watch Later"
-              className="w-6 h-6"
-            />
-          </button>
-        </div>
+      {/* Bottom overlay (slides up on hover) */}
+      <div className="absolute bottom-0 left-0 w-full bg-[#0b0c3f] p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+        <h2 className="text-lg font-bold">
+          {movie.title}
+          {movie.year ? ` (${movie.year})` : ""}
+        </h2>
+        {movie.description && (
+          <p className="text-sm mt-1">{movie.description}</p>
+        )}
+        {movie.genre && (
+          <span className="inline-block mt-2 px-2 py-1 bg-teal-500 text-white text-xs rounded">
+            {movie.genre}
+          </span>
+        )}
       </div>
     </div>
   );
