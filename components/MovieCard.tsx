@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 
+// Match the same interface from FavoritesPage
 interface Movie {
   id: string;
   title: string;
-  description: string; // or "plot" if your DB uses that
-  year: number;
-  genre: string;
-  image?: string;        // e.g. /images/xxx.webp
-  favorited?: boolean;   // from your DB query
-  watchLater?: boolean;  // from your DB query
+  description?: string; // optional
+  poster?: string;
+  image?: string;
+  year?: number;
+  genre?: string;
+  favorited?: boolean;
+  watchLater?: boolean;
 }
 
 interface MovieCardProps {
@@ -43,11 +45,14 @@ export default function MovieCard({ movie }: MovieCardProps) {
     }
   };
 
+  // Use either `movie.image` or `movie.poster`, defaulting to /images/{id}.webp
+  const imageSrc = movie.image || movie.poster || `/images/${movie.id}.webp`;
+
   return (
     <div className="relative group border rounded overflow-hidden">
       {/* Movie Image */}
       <img
-        src={movie.image || `/images/${movie.id}.webp`}
+        src={imageSrc}
         alt={movie.title}
         className="w-full h-auto"
       />
@@ -55,10 +60,14 @@ export default function MovieCard({ movie }: MovieCardProps) {
       {/* Hover Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-70 text-white p-4 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end">
         <h2 className="text-lg font-bold">{movie.title}</h2>
-        <p className="text-sm">{movie.description}</p>
-        <p className="text-sm">
-          {movie.year} • {movie.genre}
-        </p>
+        {movie.description && (
+          <p className="text-sm">{movie.description}</p>
+        )}
+        {movie.year !== undefined && movie.genre && (
+          <p className="text-sm">
+            {movie.year} • {movie.genre}
+          </p>
+        )}
 
         {/* Buttons Row */}
         <div className="flex gap-2 mt-3">

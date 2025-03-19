@@ -26,9 +26,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const titles = await fetchTitles(page, minYear, maxYear, search, genres, email);
-    return NextResponse.json(titles);
+    return NextResponse.json(titles); // Or { titles } if you prefer
   } catch (error: any) {
-    console.error("Error fetching titles:", error);
+    console.error("Error in GET /api/titles:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

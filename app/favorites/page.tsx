@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import MovieCard from "@/components/MovieCard";
 
+// Make fields optional or consistent with your DB
 interface Movie {
   id: string;
   title: string;
-  poster: string;
-  year: number;   // Include any fields your MovieCard or API expects
-  genre: string;
+  // We can make description optional if your DB doesn't have it
+  description?: string;
+  poster?: string;
+  image?: string;
+  year?: number;
+  genre?: string;
+  favorited?: boolean;
+  watchLater?: boolean;
 }
 
 export default function FavoritesPage() {
@@ -20,7 +26,6 @@ export default function FavoritesPage() {
   useEffect(() => {
     if (!session) return;
 
-    // Include credentials so cookies are sent, preventing 401 if you're logged in
     fetch("/api/favorites", { credentials: "include" })
       .then(async (res) => {
         if (!res.ok) {
@@ -32,7 +37,8 @@ export default function FavoritesPage() {
         return res.json();
       })
       .then((data) => {
-        // If your /api/favorites returns { favorites: [...] }
+        // If /api/favorites returns { favorites: [...] }
+        // unify with your route code
         setFavorites(data.favorites);
       })
       .catch((err) => {
