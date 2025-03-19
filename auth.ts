@@ -1,10 +1,11 @@
+// auth.ts
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET, // or NEXTAUTH_SECRET
   providers: [
     GitHubProvider({
       clientId: process.env.AUTH_GITHUB_ID!,
@@ -14,19 +15,15 @@ export const authOptions: NextAuthOptions = {
   debug: true,
 };
 
-// For Next.js App Router usage:
-// These let you define [..nextauth]/route.ts with `import { GET, POST } from "@/auth";`
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
 
 /**
- * Custom `auth` wrapper function.
- *  - Checks for a valid session using `getServerSession(authOptions)`
- *  - Attaches `req.auth = { user: { email: ... } }` so your existing code can keep using `req.auth`.
+ * Optional custom `auth` HOC if you want to keep using `auth(async (req, ctx) => ...)` in routes.
+ * If you don't need this, you can remove it.
  */
 export function auth(routeHandler: Function) {
   return async (req: NextRequest, context: any) => {
-    // Check if the user is logged in
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
@@ -35,14 +32,13 @@ export function auth(routeHandler: Function) {
       );
     }
 
-    // Attach a pseudo 'auth' object to the request (like your old code expects)
+    // Attach a pseudo 'auth' object to the request, if your code expects `req.auth`
     (req as any).auth = {
       user: {
         email: session.user?.email || null,
       },
     };
 
-    // Call your actual route handler
     return routeHandler(req, context);
   };
 }

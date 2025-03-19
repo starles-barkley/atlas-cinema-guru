@@ -1,32 +1,36 @@
-// app/api/favorites/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
-import { fetchFavorites } from "@/lib/data";
+import { fetchFavorites } from "@/lib/data"; // The function expects (page, userEmail)
 
-export async function GET() {
-  // 1. Check session
+export async function GET(req: NextRequest, context: any) {
+  // Parse the URL and get the `page` parameter, defaulting to 1 if missing
+  const url = new URL(req.url);
+  const pageParam = url.searchParams.get("page");
+  const page = pageParam ? parseInt(pageParam, 10) : 1;
+
+  // Ensure we have a valid session
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Extract user email
   const email = session.user?.email;
   if (!email) {
-    return NextResponse.json(
-      { error: "No user email found" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "No email found" }, { status: 400 });
   }
 
-  // 3. Fetch favorites from your database or data function
-  const favorites = await fetchFavorites(email);
+  try {
+    // Pass both `page` and `email` to fetchFavorites
+    const favorites = await fetchFavorites(page, email);
 
-  // 4. Return valid JSON, even if empty
-  // e.g., { favorites: [] }
-  return NextResponse.json({ favorites });
+    // Return JSON with a `favorites` array
+    return NextResponse.json({ favorites });
+  } catch (error: any) {
+    console.error("Error in GET /api/favorites:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch favorites" },
+      { status: 500 }
+    );
+  }
 }
