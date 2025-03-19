@@ -4,39 +4,49 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import MovieCard from "@/components/MovieCard";
 
-/**
- * We'll assume your /api/titles endpoint accepts:
- *  - page
- *  - search (title)
- *  - minYear
- *  - maxYear
- *  - genres (comma-separated)
- */
+// Example: if you have an endpoint for fetching all possible genres
+// We'll do a separate call to /api/genres. Adjust if your code differs.
 export default function HomePage() {
   const { data: session } = useSession();
   const [movies, setMovies] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [minYear, setMinYear] = useState("");
   const [maxYear, setMaxYear] = useState("");
-  const [genres, setGenres] = useState(""); // comma-separated
+  const [genres, setGenres] = useState<string[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
+  // Fetch available genres on mount
+  useEffect(() => {
+    const fetchGenres = async () => {
+      const res = await fetch("/api/genres", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setGenres(data.genres || []);
+      }
+    };
+    fetchGenres();
+  }, []);
+
   // Fetch movies whenever filters or page changes
   useEffect(() => {
-    if (!session) return; // Relying on middleware to ensure login, but let's be safe
+    if (!session) return; // rely on middleware to ensure login, but let's be safe
 
     const fetchMovies = async () => {
       setLoading(true);
+
       const params = new URLSearchParams({
         page: String(page),
         search,
         minYear,
         maxYear,
-        genres,
+        genres: selectedGenres.join(","), // comma-separated
       });
-      // Include credentials so session cookies are sent
-      const res = await fetch(`/api/titles?${params}`, { credentials: "include" });
+
+      const res = await fetch(`/api/titles?${params}`, {
+        credentials: "include",
+      });
       if (!res.ok) {
         console.error("Failed to fetch movies:", await res.text());
         setMovies([]);
@@ -44,12 +54,12 @@ export default function HomePage() {
         return;
       }
       const data = await res.json();
-      setMovies(data); // Adjust if your endpoint returns { titles: [...] }
+      setMovies(data); // or data.titles if your endpoint returns { titles: [...] }
       setLoading(false);
     };
 
     fetchMovies();
-  }, [session, page, search, minYear, maxYear, genres]);
+  }, [session, page, search, minYear, maxYear, selectedGenres]);
 
   // Reset to page 1 whenever a filter changes
   const handleFilterChange = (setter: Function, value: string) => {
@@ -57,13 +67,24 @@ export default function HomePage() {
     setPage(1);
   };
 
-  // UI
+  const toggleGenre = (g: string) => {
+    setPage(1);
+    setSelectedGenres((prev) =>
+      prev.includes(g) ? prev.filter((item) => item !== g) : [...prev, g]
+    );
+  };
+
+  if (!session) {
+    return <p>Please log in to view the home page.</p>;
+  }
+
   return (
     <div className="p-4">
       <h1 className="text-3xl font-bold mb-4">Cinema Guru</h1>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-4">
+        {/* Search by Title */}
         <input
           type="text"
           placeholder="Search title..."
@@ -71,6 +92,8 @@ export default function HomePage() {
           onChange={(e) => handleFilterChange(setSearch, e.target.value)}
           className="border p-2 rounded"
         />
+
+        {/* Min Year */}
         <input
           type="number"
           placeholder="Min Year"
@@ -78,6 +101,8 @@ export default function HomePage() {
           onChange={(e) => handleFilterChange(setMinYear, e.target.value)}
           className="border p-2 rounded w-24"
         />
+
+        {/* Max Year */}
         <input
           type="number"
           placeholder="Max Year"
@@ -85,13 +110,24 @@ export default function HomePage() {
           onChange={(e) => handleFilterChange(setMaxYear, e.target.value)}
           className="border p-2 rounded w-24"
         />
-        <input
-          type="text"
-          placeholder="Genres (comma-separated)"
-          value={genres}
-          onChange={(e) => handleFilterChange(setGenres, e.target.value)}
-          className="border p-2 rounded"
-        />
+
+        {/* Genre Multi-Select */}
+        <div className="flex items-center gap-2">
+          <label className="font-semibold">Genres:</label>
+          <div className="flex flex-wrap gap-2">
+            {genres.map((g) => (
+              <button
+                key={g}
+                onClick={() => toggleGenre(g)}
+                className={`px-2 py-1 border rounded ${
+                  selectedGenres.includes(g) ? "bg-blue-500 text-white" : ""
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {loading ? (

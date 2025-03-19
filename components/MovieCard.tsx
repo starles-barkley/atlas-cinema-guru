@@ -2,24 +2,28 @@
 
 import { useState } from "react";
 
-// Match the same interface from FavoritesPage
 interface Movie {
   id: string;
   title: string;
-  description?: string; // optional
-  poster?: string;
-  image?: string;
+  description?: string;
   year?: number;
   genre?: string;
+  image?: string;
   favorited?: boolean;
   watchLater?: boolean;
 }
 
 interface MovieCardProps {
   movie: Movie;
+  onToggleFavorite?: () => void;     // new optional callback
+  onToggleWatchLater?: () => void;  // new optional callback
 }
 
-export default function MovieCard({ movie }: MovieCardProps) {
+export default function MovieCard({
+  movie,
+  onToggleFavorite,
+  onToggleWatchLater,
+}: MovieCardProps) {
   const [isFavorite, setIsFavorite] = useState(!!movie.favorited);
   const [isWatchLater, setIsWatchLater] = useState(!!movie.watchLater);
 
@@ -29,6 +33,8 @@ export default function MovieCard({ movie }: MovieCardProps) {
     const res = await fetch(url, { method, credentials: "include" });
     if (res.ok) {
       setIsFavorite(!isFavorite);
+      // If a parent page wants to refetch after removing favorites
+      if (onToggleFavorite) onToggleFavorite();
     } else {
       console.error("Failed to toggle favorite:", await res.text());
     }
@@ -40,13 +46,13 @@ export default function MovieCard({ movie }: MovieCardProps) {
     const res = await fetch(url, { method, credentials: "include" });
     if (res.ok) {
       setIsWatchLater(!isWatchLater);
+      if (onToggleWatchLater) onToggleWatchLater();
     } else {
       console.error("Failed to toggle watch later:", await res.text());
     }
   };
 
-  // Use either `movie.image` or `movie.poster`, defaulting to /images/{id}.webp
-  const imageSrc = movie.image || movie.poster || `/images/${movie.id}.webp`;
+  const imageSrc = movie.image || `/images/${movie.id}.webp`;
 
   return (
     <div className="relative group border rounded overflow-hidden">

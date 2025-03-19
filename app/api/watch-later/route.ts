@@ -1,32 +1,31 @@
-import { fetchWatchLaters } from "@/lib/data";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
+import { fetchWatchLaters } from "@/lib/data";
 
-/**
- * GET /api/titles
- */
-export const GET = auth(async (req: NextRequest) => {
-  const params = req.nextUrl.searchParams;
-  const page = params.get("page") ? Number(params.get("page")) : 1;
-  const minYear = params.get("minYear") ? Number(params.get("minYear")) : 0;
-  const maxYear = params.get("maxYear")
-    ? Number(params.get("maxYear"))
-    : new Date().getFullYear();
-  const query = params.get("query") ?? "";
-
-  //@ts-ignore
-  if (!req.auth) {
-    return NextResponse.json(
-      { error: "Unauthorized - Not logged in" },
-      { status: 401 }
-    );
+export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const {
-    user: { email }, //@ts-ignore
-  } = req.auth;
+  const url = new URL(req.url);
+  const page = parseInt(url.searchParams.get("page") || "1", 10);
 
-  const watchLater = await fetchWatchLaters(page, email);
+  const email = session.user?.email;
+  if (!email) {
+    return NextResponse.json({ error: "No email" }, { status: 400 });
+  }
 
-  return NextResponse.json({ watchLater });
-});
+  try {
+    // fetchWatchLaters expects (page, userEmail)
+    const watchLater = await fetchWatchLaters(page, email);
+    return NextResponse.json({ watchLater });
+  } catch (error: any) {
+    console.error("Error in GET /api/watch-later:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch watch-later" },
+      { status: 500 }
+    );
+  }
+}
