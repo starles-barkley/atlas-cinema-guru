@@ -1,27 +1,32 @@
+// app/api/favorites/route.ts
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 import { fetchFavorites } from "@/lib/data";
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/app/auth";
 
-/**
- * GET /api/favorites
- */
-export const GET = auth(async (req: NextRequest) => {
-  const params = req.nextUrl.searchParams;
-  const page = params.get("page") ? Number(params.get("page")) : 1;
-
-  //@ts-ignore
-  if (!req.auth) {
+export async function GET() {
+  // 1. Check session
+  const session = await getServerSession(authOptions);
+  if (!session) {
     return NextResponse.json(
-      { error: "Unauthorized - Not logged in" },
+      { error: "Unauthorized" },
       { status: 401 }
     );
   }
 
-  const {
-    user: { email }, //@ts-ignore
-  } = req.auth;
+  // 2. Extract user email
+  const email = session.user?.email;
+  if (!email) {
+    return NextResponse.json(
+      { error: "No user email found" },
+      { status: 400 }
+    );
+  }
 
-  const favorites = await fetchFavorites(page, email);
+  // 3. Fetch favorites from your database or data function
+  const favorites = await fetchFavorites(email);
 
+  // 4. Return valid JSON, even if empty
+  // e.g., { favorites: [] }
   return NextResponse.json({ favorites });
-});
+}
